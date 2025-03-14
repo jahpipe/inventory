@@ -147,14 +147,6 @@ router.post('/inspection-reports', async (req, res) => {
 });
 
 
-app.get('/api/inspection-reports', async (req, res) => {
-  try {
-    const reports = await InspectionReport.find({});
-    res.json(reports);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch inspection reports' });
-  }
-});
 
 
 module.exports = router;
