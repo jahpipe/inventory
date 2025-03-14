@@ -110,7 +110,7 @@ const InspectionReport = () => {
         <div className="border p-2 mb-4">
           <div className="d-flex justify-content-between mb-2">
             <div className="d-flex align-items-center">
-              Supplier: <input type="text" className="border-0 border-bottom ms-2 w-50 bg-transparent" value={supplier} onChange={(e) => setSupplier(e.target.value)} required />
+              Suppliers: <input type="text" className="border-0 border-bottom ms-2 w-50 bg-transparent" value={supplier} onChange={(e) => setSupplier(e.target.value)} required />
             </div>
             <div className="d-flex align-items-center">
               IAR No.: <input type="text" className="border-0 border-bottom ms-2 w-50 bg-transparent" value={iarNo} onChange={(e) => setIarNo(e.target.value)} required />
