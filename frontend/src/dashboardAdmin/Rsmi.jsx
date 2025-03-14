@@ -2,7 +2,7 @@ import React from 'react'
 
 const Rsmi = () => {
   return (
-    <div>Rsmi</div>
+    <div>this is Rsmi</div>
   )
 }
 
