@@ -4,14 +4,20 @@ import { FiMenu, FiUser, FiClipboard, FiSettings, FiBarChart, FiDollarSign, FiLo
 import "bootstrap/dist/css/bootstrap.min.css";
 import Admin from "./Admin";
 import InspectionReport from "./InspectionReport";
-import RIS from "./RIS";
-import RSMI from "./RSMI";
+import RIS from "./Ris";
+import RSMI from "./Rsmi";
+import Ics from "./Ics";
+import Rspi from "./Rspi";
+import Regspi from "./Regspi";
+import PropertyPlan from "./PropertyPlan";
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [currentUser, setCurrentUser] = useState(null);
   const [consumableOpen, setConsumableOpen] = useState(false);
+  const [semiExpandableOpen, setSemiExpandableOpen] = useState(false);
+
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -30,52 +36,66 @@ const AdminDashboard = () => {
     }
   };
 
+  const renderNavItem = (icon, label, tab, onClick) => (
+    <button
+      className={`btn btn-dark text-start text-white d-flex align-items-center my-2 ${activeTab === tab ? "bg-primary" : ""}`}
+      onClick={onClick || (() => setActiveTab(tab))}
+    >
+      {icon} <span className={isSidebarOpen ? "ms-2 d-inline" : "d-none"}>{label}</span>
+    </button>
+  );
+
+  const renderSubMenu = (isOpen, items) => (
+    isOpen && (
+      <div className="ms-4">
+        {items.map(({ tab, label }) => (
+          <button
+            key={tab}
+            className={`btn btn-secondary text-white d-block my-2 ${activeTab === tab ? "bg-info" : ""}`}
+            onClick={() => setActiveTab(tab)}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+    )
+  );
+
   return (
     <div className="d-flex vh-100">
-      <div className="bg-dark text-white d-flex flex-column p-3" style={{ width: isSidebarOpen ? "250px" : "75px", height: "100vh", overflowY: "auto" }}>
-        <button className="btn btn-outline-light mb-3 d-md-none" onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
+      <div className={`bg-secondary text-white d-flex flex-column p-4 ${isSidebarOpen ? "w-25" : "w-10"} transition-all shadow`} style={{ height: "100vh", overflowY: "auto" }}>
+        <button className="btn btn-light mb-3" onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
           <FiMenu />
         </button>
-        <h2 className={`fs-5 text-center ${isSidebarOpen ? "d-block" : "d-none"}`}>Admin Panel</h2>
+
+        <h2 className={`fs-4 text-center fw-bold ${isSidebarOpen ? "d-block" : "d-none"}`}>Admin Panel</h2>
 
         {currentUser && (
-          <div className="d-flex flex-column align-items-center my-3">
-            <p className="text-white mb-0">{currentUser.fullName}</p>
-            <p className="text-white small">{currentUser.role}</p>
+          <div className="d-flex flex-column align-items-center my-4">
+            <p className="text-white mb-1 fs-5">{currentUser.fullName}</p>
+            <p className="text-white-50 small">{currentUser.role}</p>
           </div>
         )}
 
         <nav className="nav flex-column flex-grow-1">
-          <button className={`btn btn-dark text-start text-white d-flex align-items-center my-2 ${activeTab === "dashboard" ? "bg-primary" : ""}`} onClick={() => setActiveTab("dashboard")}>
-            <FiBarChart className="me-2" /> <span className={isSidebarOpen ? "d-inline" : "d-none"}>Dashboard</span>
-          </button>
+          {renderNavItem(<FiBarChart />, "Dashboard", "dashboard")}
+          {renderNavItem(<FiUser />, "IAR", "users")}
 
-          <button className={`btn btn-dark text-start text-white d-flex align-items-center my-2 ${activeTab === "users" ? "bg-primary" : ""}`} onClick={() => setActiveTab("users")}>
-            <FiUser className="me-2" /> <span className={isSidebarOpen ? "d-inline" : "d-none"}>IAR</span>
-          </button>
+          {renderNavItem(<FiClipboard />, "Consumable", null, () => setConsumableOpen(!consumableOpen))}
+          {renderSubMenu(consumableOpen, [
+            { tab: "RIS", label: "(RIS)" },
+            { tab: "RSMI", label: "(RSMI)" },
+          ])}
 
-          <button className="btn btn-dark text-start text-white d-flex align-items-center my-2" onClick={() => setConsumableOpen(!consumableOpen)}>
-            <FiClipboard className="me-2" /> <span className={isSidebarOpen ? "d-inline" : "d-none"}>CONSUMABLE</span>
-          </button>
+          {renderNavItem(<FiDollarSign />, "Semi-Expandable", null, () => setSemiExpandableOpen(!semiExpandableOpen))}
+          {renderSubMenu(semiExpandableOpen, [
+            { tab: "ICS", label: "(ICS)" },
+            { tab: "RSPI", label: "(RSPI)" },
+            { tab: "REGSPI", label: "(REGSPI)" },
+          ])}
 
-          {consumableOpen && (
-            <div className="ms-4">
-              <button className={`btn btn-dark text-white d-block my-2 ${activeTab === "RIS" ? "bg-primary" : ""}`} onClick={() => setActiveTab("RIS")}>RIS</button>
-              <button className={`btn btn-dark text-white d-block my-2 ${activeTab === "RSMI" ? "bg-primary" : ""}`} onClick={() => setActiveTab("RSMI")}>RSMI</button>
-            </div>
-          )}
-
-          <button className={`btn btn-dark text-start text-white d-flex align-items-center my-2 ${activeTab === "balance" ? "bg-primary" : ""}`} onClick={() => setActiveTab("balance")}>
-            <FiDollarSign className="me-2" /> <span className={isSidebarOpen ? "d-inline" : "d-none"}>Manage Balance</span>
-          </button>
-
-          <button className={`btn btn-dark text-start text-white d-flex align-items-center my-2 ${activeTab === "reports" ? "bg-primary" : ""}`} onClick={() => setActiveTab("reports")}>
-            <FiBarChart className="me-2" /> <span className={isSidebarOpen ? "d-inline" : "d-none"}>Reports</span>
-          </button>
-
-          <button className={`btn btn-dark text-start text-white d-flex align-items-center my-2 ${activeTab === "settings" ? "bg-primary" : ""}`} onClick={() => setActiveTab("settings")}>
-            <FiSettings className="me-2" /> <span className={isSidebarOpen ? "d-inline" : "d-none"}>Settings</span>
-          </button>
+          {renderNavItem(<FiBarChart />, "Property Plan & Equipment", "propertyPlan")}
+          {renderNavItem(<FiSettings />, "Settings", "settings")}
 
           <button className="btn btn-danger text-start text-white d-flex align-items-center mt-auto" onClick={handleLogout}>
             <FiLogOut className="me-2" /> <span className={isSidebarOpen ? "d-inline" : "d-none"}>Logout</span>
@@ -83,12 +103,16 @@ const AdminDashboard = () => {
         </nav>
       </div>
 
-      <div className="flex-grow-1 bg-light p-4" style={{ overflowY: "auto" }}>
+      <div className="flex-grow-1 bg-white p-5 shadow" style={{ overflowY: "auto" }}>
         <div className="mt-4">
           {activeTab === "dashboard" && <Admin />}
           {activeTab === "users" && <InspectionReport />}
           {activeTab === "RIS" && <RIS />}
           {activeTab === "RSMI" && <RSMI />}
+          {activeTab === "ICS" && <Ics />}
+          {activeTab === "RSPI" && <Rspi />}
+          {activeTab === "REGSPI" && <Regspi />}
+          {activeTab === "propertyPlan" && <PropertyPlan />}
         </div>
       </div>
     </div>

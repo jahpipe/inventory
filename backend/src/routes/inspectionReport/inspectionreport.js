@@ -16,7 +16,7 @@ const db = mysql.createPool({
 
 // POST route to save an inspection report
 router.post('/inspection-reports', async (req, res) => {
-  console.log('📩 Incoming request:', req.body); 
+  console.log('📩 Incoming request:', req.body);
 
   const {
     entityName,
@@ -70,7 +70,7 @@ router.post('/inspection-reports', async (req, res) => {
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         entityName,
-        fundCluster || null, 
+        fundCluster || null,
         supplier,
         iarNo,
         contractNo,
@@ -79,7 +79,7 @@ router.post('/inspection-reports', async (req, res) => {
         invoiceNo,
         responsibilityCenterCode,
         acceptanceDetails.dateInspected,
-        acceptanceDetails.isComplete ? 'Complete' : 'Incomplete',
+        acceptanceDetails.isComplete ? 1 : 0, // Numeric for inspection_status
         acceptanceDetails.isPartial ? 'Partial' : 'Full',
         acceptanceDetails.supplyOfficer,
       ]
@@ -89,33 +89,35 @@ router.post('/inspection-reports', async (req, res) => {
     console.log(`✅ Inspection report saved (ID: ${reportId})`);
 
     // Insert into `inspectionitems` table
-    if (items.length > 0) {
-      const itemValues = items.map(item => [
-        reportId,
-        item.stockPropertyNo || null,
-        item.description || null,
-        item.unit || null,
-        item.quantity || null,
-        item.price || null, // Handle optional price
-      ]);
+    // Insert into `inspectionitems` table
+if (items.length > 0) {
+  const itemValues = items.map(item => [
+    reportId,
+    item.stockPropertyNo || null,
+    item.description || null,
+    item.unit || null,
+    item.quantity || null,
+    item.price || null,
+  ]);
 
-      await connection.query(
-        `INSERT INTO inspectionitems 
-        (inspection_report_id, stock_property_number, description, unit, quantity, price) 
-        VALUES ?`,
-        [itemValues]
-      );
+  await connection.query(
+    `INSERT INTO inspectionitems 
+    (inspection_report_id, stock_property_number, description, unit, quantity, price) 
+    VALUES ${items.map(() => "(?, ?, ?, ?, ?, ?)").join(", ")}`,
+    itemValues.flat() // ✅ Correctly flattening the array
+  );      
 
-      console.log(`✅ ${items.length} items inserted into inspectionitems`);
-    }
+  console.log(`✅ ${items.length} items inserted into inspectionitems`);
+}
+
 
     // Insert into `inspectionofficers` table
     if (inspectionOfficers.length > 0) {
       const officerValues = inspectionOfficers.map(officer => {
-        if (!officer.officerName) {  // Remove strict role validation
+        if (!officer.officerName) {
           throw new Error('Missing required officer name');
         }
-        return [reportId, officer.officerName, officer.role || 'Unknown']; // Default value for role
+        return [reportId, officer.officerName, officer.role || 'Unknown'];
       });
 
       await connection.query(
@@ -135,18 +137,88 @@ router.post('/inspection-reports', async (req, res) => {
     res.status(201).json({ message: 'Inspection report saved successfully', reportId });
 
   } catch (err) {
-    // Rollback transaction if an error occurs
     if (connection) await connection.rollback();
     console.error('❌ Error saving inspection report:', err);
     res.status(500).json({ error: 'Failed to save inspection report', details: err.message });
-
   } finally {
-    // Ensure connection is released back to the pool
     if (connection) connection.release();
   }
 });
 
+// GET route to fetch all inspection reports
+// GET route to fetch all inspection reports
+router.get('/inspection-reports', async (req, res) => {
+  let connection;
+  try {
+    connection = await db.getConnection();
 
+    // Fetch reports
+    const [reports] = await connection.query(`
+      SELECT 
+        id AS reportId, entity_name AS entityName, fund_cluster AS fundCluster,
+        supplier, iar_number AS iarNo, contract_number AS contractNo, date AS reportDate,
+        requisitioning_office AS requisitionOffice, invoice_number AS invoiceNo,
+        responsibility_center_code AS responsibilityCenterCode, date_inspected AS dateInspected,
+        inspection_status AS inspectionStatus, acceptance_status AS acceptanceStatus,
+        supply_officer AS supplyOfficer
+      FROM inspectionreport
+    `);
+
+    // Fetch items separately
+    const [items] = await connection.query(`
+      SELECT 
+        inspection_report_id AS reportId, stock_property_number AS stockPropertyNo,
+        description, unit, quantity, price
+      FROM inspectionitems
+    `);
+
+    // Fetch officers separately
+    const [officers] = await connection.query(`
+      SELECT 
+        inspection_report_id AS reportId, officer_name AS officerName, role
+      FROM inspectionofficers
+    `);
+
+    // Group data
+    const reportMap = {};
+
+    reports.forEach(report => {
+      reportMap[report.reportId] = {
+        ...report,
+        inspectionStatus: report.inspectionStatus === 1, // Convert to boolean
+        acceptanceDetails: {
+          dateInspected: report.dateInspected,
+          isComplete: report.inspectionStatus === 1, // Convert to boolean
+          isPartial: report.acceptanceStatus === 'Partial',
+          supplyOfficer: report.supplyOfficer,
+        },
+        items: [],
+        inspectionOfficers: [],
+      };
+    });
+
+    items.forEach(item => {
+      if (reportMap[item.reportId]) {
+        reportMap[item.reportId].items.push(item);
+      }
+    });
+
+    officers.forEach(officer => {
+      if (reportMap[officer.reportId]) {
+        reportMap[officer.reportId].inspectionOfficers.push(officer);
+      }
+    });
+
+    const result = Object.values(reportMap);
+    res.status(200).json(result);
+
+  } catch (err) {
+    console.error('❌ Error fetching inspection reports:', err);
+    res.status(500).json({ error: 'Failed to fetch inspection reports', details: err.message });
+  } finally {
+    if (connection) connection.release();
+  }
+});
 
 
 module.exports = router;

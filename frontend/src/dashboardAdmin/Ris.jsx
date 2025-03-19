@@ -59,6 +59,10 @@ const Ris = () => {
         },
         body: JSON.stringify(formData),
       });
+      
+      const data = await response.json();
+      console.log('Response:', data);
+      
 
       if (!response.ok) {
         throw new Error('Failed to submit form');
@@ -168,81 +172,30 @@ const Ris = () => {
                 </tr>
               </thead>
               <tbody>
-                {formData.items.map((item, index) => (
-                  <tr key={index}>
-                    <td>
-                      <input
-                        type="text"
-                        className="form-control"
-                        name={`items.stockNo`}
-                        value={item.stockNo}
-                        onChange={(e) => handleInputChange(e, index)}
-                      />
-                    </td>
-                    <td>
-                      <input
-                        type="text"
-                        className="form-control"
-                        name={`items.unit`}
-                        value={item.unit}
-                        onChange={(e) => handleInputChange(e, index)}
-                      />
-                    </td>
-                    <td>
-                      <input
-                        type="text"
-                        className="form-control"
-                        name={`items.description`}
-                        value={item.description}
-                        onChange={(e) => handleInputChange(e, index)}
-                      />
-                    </td>
-                    <td>
-                      <input
-                        type="text"
-                        className="form-control"
-                        name={`items.quantity`}
-                        value={item.quantity}
-                        onChange={(e) => handleInputChange(e, index)}
-                      />
-                    </td>
-                    <td>
-                      <input
-                        type="checkbox"
-                        name={`items.stockAvailableYes`}
-                        checked={item.stockAvailableYes}
-                        onChange={(e) => handleInputChange(e, index)}
-                      />
-                    </td>
-                    <td>
-                      <input
-                        type="checkbox"
-                        name={`items.stockAvailableNo`}
-                        checked={item.stockAvailableNo}
-                        onChange={(e) => handleInputChange(e, index)}
-                      />
-                    </td>
-                    <td>
-                      <input
-                        type="text"
-                        className="form-control"
-                        name={`items.issueQuantity`}
-                        value={item.issueQuantity}
-                        onChange={(e) => handleInputChange(e, index)}
-                      />
-                    </td>
-                    <td>
-                      <input
-                        type="text"
-                        className="form-control"
-                        name={`items.remarks`}
-                        value={item.remarks}
-                        onChange={(e) => handleInputChange(e, index)}
-                      />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
+  {formData.items.filter(item =>
+    item.stockNo || item.unit || item.description || item.quantity || item.issueQuantity || item.remarks
+  ).length > 0 ? (
+    formData.items.map((item, index) => (
+      (item.stockNo || item.unit || item.description || item.quantity || item.issueQuantity || item.remarks) && (
+        <tr key={index}>
+          <td><input type="text" className="form-control" name="items.stockNo" value={item.stockNo} onChange={(e) => handleInputChange(e, index)} /></td>
+          <td><input type="text" className="form-control" name="items.unit" value={item.unit} onChange={(e) => handleInputChange(e, index)} /></td>
+          <td><input type="text" className="form-control" name="items.description" value={item.description} onChange={(e) => handleInputChange(e, index)} /></td>
+          <td><input type="text" className="form-control" name="items.quantity" value={item.quantity} onChange={(e) => handleInputChange(e, index)} /></td>
+          <td><input type="checkbox" name="items.stockAvailableYes" checked={item.stockAvailableYes} onChange={(e) => handleInputChange(e, index)} /></td>
+          <td><input type="checkbox" name="items.stockAvailableNo" checked={item.stockAvailableNo} onChange={(e) => handleInputChange(e, index)} /></td>
+          <td><input type="text" className="form-control" name="items.issueQuantity" value={item.issueQuantity} onChange={(e) => handleInputChange(e, index)} /></td>
+          <td><input type="text" className="form-control" name="items.remarks" value={item.remarks} onChange={(e) => handleInputChange(e, index)} /></td>
+        </tr>
+      )
+    ))
+  ) : (
+    <tr>
+      <td colSpan="8">No data available</td>
+    </tr>
+  )}
+</tbody>
+
             </table>
           </div>
 
